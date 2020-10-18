@@ -50,6 +50,12 @@ def verificarTabelaSimbolos(lexema, token, tipo):
     if(token == 'id'):
       aux = {lexema: [token, tipo]}
       tabela_simbolos.update(aux)
+      return(1)
+  else:
+    #Já está na tabela de símbolos
+    aux = tabela_simbolos[lexema]
+    print("{} {} {}".format(lexema, aux[0], aux[1]))
+    return(0)
 
 
 def estadoAceito(lexema, estado, linhaerror, colunaerror):
@@ -57,15 +63,14 @@ def estadoAceito(lexema, estado, linhaerror, colunaerror):
     if(estado in aceitacao_automato[chave]):
       if(estado == 19):
         print('{} {} inteiro'.format(lexema, chave))
-        verificarTabelaSimbolos(lexema, chave, 'inteiro')
         return
       elif(estado == 21):
         print('{} {} real'.format(lexema, chave))
-        verificarTabelaSimbolos(lexema, chave, 'real')
         return
       else:
-        verificarTabelaSimbolos(lexema, chave, '-')
-        print('{} {} -'.format(lexema, chave))
+        if(verificarTabelaSimbolos(lexema, chave, '-')):
+          print('{} {} -'.format(lexema, chave))
+        
         return
 
   print('Erro na linha {} coluna {}. A estrutura identificada {} não pertence a linguagem.'.format(linhaerror, colunaerror, lexema))
