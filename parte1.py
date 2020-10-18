@@ -52,7 +52,7 @@ def verificarTabelaSimbolos(lexema, token, tipo):
       tabela_simbolos.update(aux)
 
 
-def estadoAceito(lexema, estado, linhaerror):
+def estadoAceito(lexema, estado, linhaerror, colunaerror):
   for chave in aceitacao_automato.keys():
     if(estado in aceitacao_automato[chave]):
       if(estado == 19):
@@ -68,7 +68,7 @@ def estadoAceito(lexema, estado, linhaerror):
         print('{} {} -'.format(lexema, chave))
         return
 
-  print('Erro na linha {}. A estrutura identificada {} não pertence a linguagem.'.format(linhaerror, lexema))
+  print('Erro na linha {} coluna {}. A estrutura identificada {} não pertence a linguagem.'.format(linhaerror, colunaerror, lexema))
 
 
 def inAutomato(caracter, estado):
@@ -81,7 +81,7 @@ def inAutomato(caracter, estado):
   return(-1) #Não presente no automato
   
 
-def verificarContanteLiteral(palavra, interador, linhaerror):
+def verificarContanteLiteral(palavra, interador, linhaerror, colunaerror):
   lex = ''
 
   while(interador < len(palavra) and palavra[interador] != '"'):
@@ -94,11 +94,11 @@ def verificarContanteLiteral(palavra, interador, linhaerror):
     return(interador + 1)
   else:
     #Saiu do while por erro, então printar o erro
-    print('Erro na linha {}. Não foi identificador fechamento de ".'.format(linhaerror))
+    print('Erro na linha {} coluna {}. Não foi identificador fechamento de ".'.format(linhaerror, colunaerror))
     return(interador)
 
 
-def ignorarComentarios(palavra, interador, linhaerror):
+def ignorarComentarios(palavra, interador, linhaerror, colunaerror):
   lex = ''
   while(interador < len(palavra) and palavra[interador] != '}'):
     lex += palavra[interador]
@@ -107,7 +107,7 @@ def ignorarComentarios(palavra, interador, linhaerror):
   
   if(interador > len(palavra)):
     #Saiu do while por erro, então printar o erro
-    print('Erro na linha {}. Não foi identificador fechamento de }.'.format(linhaerror))
+    print('Erro na linha {} e coluna {}. Não foi identificador fechamento de }.'.format(linhaerror, colunaerror))
     return(interador)
 
   print('{} comentario -'.format(lex))
@@ -119,6 +119,7 @@ def lexico():
   
   for linha in codigoFonte:
     contLinha += 1
+    contColuna = 0
 
     linha = linha.rstrip()
     linha = linha.lstrip()
@@ -129,29 +130,31 @@ def lexico():
     lexema = ''
   
     while(i < len(linha)):
+      contLinha += 1
+
       if(linha[i] == '"'):
           i+=1
-          i = verificarContanteLiteral(linha, i, contLinha)
+          i = verificarContanteLiteral(linha, i, contLinha, contColuna)
       elif(linha[i] == '{'):
         i+=1
-        i = verificarContanteLiteral(linha, i, contLinha)
+        i = ignorarComentarios(linha, i, contLinha, contColuna)
       else:
         flag = inAutomato(linha[i], estado)
 
         if(flag == -1 and estado == 0):
-          print('Erro na linha {}. O {} não foi reconhecido pela linguagem.'.format(contLinha, linha[i]))
+          print('Erro na linha {} coluna {}. O {} não foi reconhecido pela linguagem.'.format(contLinha, contColuna, linha[i]))
           i+=1
           flag = 0
         elif(estado == 0 and flag == 0): #Tira os espaços
           i += 1
         elif(flag == -1 and estado != 0):
           #verifica aceitação
-          estadoAceito(lexema, estado, contLinha)
+          estadoAceito(lexema, estado, contLinha, contColuna)
           estado = 0 #Para verificar se acha do começo
           lexema = ''
         elif(flag == 2 or flag == 3 or flag == 1 or flag == 4 or flag == 5 or flag == 6 or flag == 7 or flag == 8 or flag == 10 or flag == 12 or flag == 13 or flag == 14):#Estado de aceitação final, sem loop
             lexema+= linha[i]
-            estadoAceito(lexema, flag, contLinha)
+            estadoAceito(lexema, flag, contLinha, contColuna)
             estado = 0
             i+=1
             lexema = ''
@@ -162,7 +165,7 @@ def lexico():
 
     #Pode ocorrer de ser uma unica palavra
     if(len(lexema)):
-      estadoAceito(lexema, estado, contLinha)
+      estadoAceito(lexema, estado, contLinha, contColuna)
       
   #Adicionar EOF do final do arquivo
   print('EOF')
