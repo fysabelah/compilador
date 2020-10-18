@@ -81,7 +81,7 @@ def inAutomato(caracter, estado):
   return(-1) #Não presente no automato
   
 
-def verificarContanteLiteral(palavra, interador, linhaerror, colunaerror):
+def verificarContanteLiteral(palavra, interador, linhaerror):
   lex = ''
 
   while(interador < len(palavra) and palavra[interador] != '"'):
@@ -94,24 +94,25 @@ def verificarContanteLiteral(palavra, interador, linhaerror, colunaerror):
     return(interador + 1)
   else:
     #Saiu do while por erro, então printar o erro
-    print('Erro na linha {} coluna {}. Não foi identificador fechamento de ".'.format(linhaerror, colunaerror))
+    print('Erro na linha {} coluna {}. Não foi identificador fechamento de ".'.format(linhaerror, interador))
     return(interador)
 
 
-def ignorarComentarios(palavra, interador, linhaerror, colunaerror):
+def ignorarComentarios(palavra, interador, linhaerror):
   lex = ''
+
   while(interador < len(palavra) and palavra[interador] != '}'):
     lex += palavra[interador]
     interador += 1
-    #Como é só para ignorar, não vou registrar
   
-  if(interador > len(palavra)):
-    #Saiu do while por erro, então printar o erro
-    print('Erro na linha {} e coluna {}. Não foi identificador fechamento de }.'.format(linhaerror, colunaerror))
-    return(interador)
+  if(interador < len(palavra)):
+    print('{} comentario -'.format(lex))
+    return(interador + 1)
 
-  print('{} comentario -'.format(lex))
-  return(interador + 1)
+  #Saiu do while por erro, então printar o erro
+  print('Erro na linha {} e coluna {}. Não foi identificador fechamento de }}.'.format(linhaerror, interador))
+  return(interador)
+
 
 def lexico():
   contLinha = 0 #Conta a linha que está para informar o erro
@@ -130,19 +131,19 @@ def lexico():
     lexema = ''
   
     while(i < len(linha)):
-      contLinha += 1
+      contColuna += 1 #Conta a coluna que está para informar o erro
 
       if(linha[i] == '"'):
           i+=1
-          i = verificarContanteLiteral(linha, i, contLinha, contColuna)
+          i = verificarContanteLiteral(linha, i, contLinha)
       elif(linha[i] == '{'):
         i+=1
-        i = ignorarComentarios(linha, i, contLinha, contColuna)
+        i = ignorarComentarios(linha, i, contLinha)
       else:
         flag = inAutomato(linha[i], estado)
 
         if(flag == -1 and estado == 0):
-          print('Erro na linha {} coluna {}. O {} não foi reconhecido pela linguagem.'.format(contLinha, contColuna, linha[i]))
+          print('Erro na linha {} coluna {}. O {} não foi reconhecido pela linguagem.'.format(contLinha, i, linha[i]))
           i+=1
           flag = 0
         elif(estado == 0 and flag == 0): #Tira os espaços
