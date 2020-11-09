@@ -314,7 +314,40 @@ def lexico():
   #print('EOF')
   codigoFonte.close()
 
+def tratamentoErrosRetorna(a, pilha):
+  if(len(pilha) > 1):
+    #retirada onde ocorreu o erro
+    pilha.pop()
+    
+    #testar avanço
+    s = pilha[len(pilha) - 1]
+    aux = tabela_action[s]
 
+    while(len(pilha) > 1 and a[0] not in aux.keys()):
+      pilha.pop()
+      s = pilha[len(pilha) - 1]
+      aux = tabela_action[s]
+    
+    if(len(pilha) == 1):
+      return(0)
+    else:
+      return(1)
+  else:
+    #Programa para e informa o erro e pronto, pois o estado que está é o erro e se tirá-lo sobre apenas o 0.
+    return(0)
+
+
+def tratamentoErrosAvanco(dicionario, copia):
+  cont = 0
+
+  for i in fila_lexico:
+    if(i[0] in dicionario.keys()):
+      return(cont)
+    else:
+      cont+=1
+      copia.pop(0)
+  
+  return(cont)
 #--------------------------------------Main--------------------------------------#
 lexico()
 
@@ -323,43 +356,67 @@ fila_lexico.append(['$'])
 t = 0
 pilha = [0]
 a = fila_lexico.pop(0)
+tokenAnterior = a
 
 while stop:
-  print('a: {}'.format(a))
   s = pilha[len(pilha) - 1]
-  print('s: {}'.format(s))
   auxDic = tabela_action[s]
-  print('dic aux: {}'.format(auxDic))
+  
   if(a[0] in auxDic.keys()):
     lista = auxDic[a[0]]
-    print('lista: {}'.format(lista))
+    
     if lista[0] == 'S':
       t = lista[1]
-      print('t: {}'.format(t))
       pilha.append(t)
-      print('pilha: {}'.format(pilha))
+      tokenAnterior = a
       a = fila_lexico.pop(0)
     elif lista[0] == 'R':
       regra = lista[1]
       roule = gramatica_LLC[regra - 1]
       A = roule[0]
-      print('A:{}'.format(A))
       beta = roule[2:]
-      print('beta: {}'.format(beta))
-      print('pilha antes r: {}'.format(pilha))
+      
       for i in range(0, len(beta)):
         pilha.pop()
-      print('pilha depoiss r: {}'.format(pilha))
+      
       t = pilha[len(pilha) - 1]
-      print('t:{}'.format(t))
+      
       if t in tabela_goto.keys():
         auxDic = tabela_goto[t]
 
         if A in auxDic.keys():
           pilha.append(auxDic[A])
-          print('pilha: {}'.format(pilha))
           print(' '.join(roule))
           print()
     elif lista[0] == 'ACC':
-      print('Accept')
       stop = 0
+  else:
+    #Rotina de tramento de erro de Inserção
+    if(s == 0 and a[0] != 'inicio'):
+      fila_lexico.insert(0, a)
+      print('Erro na linha 1 coluna 0, NÃO foi identificado a palavra reservada inicio.\n')
+      a = ['inicio', 1, 0]
+    elif(s == 2 and a[0] != 'varinicio'):
+      fila_lexico.insert(0, a)
+      print('Erro na linha 2 coluna 0, NÃO foi identificado a palavra reservada varinicio.\n')
+      a = ['varinicio', 1, 0]
+    elif(s == 58 and a[0] != 'varfim'):
+      fila_lexico.insert(0, a)
+      print('Erro na linha {} coluna {}, NÃO foi identificado a palavra reservada varfim.\n'.format(a[1], a[2]))
+      a = ['varfim', 1, 0]
+    elif(a[0] == '$'):
+      print('Erro na linha {} coluna {}, após o token {}. NÃO foi identificado a palavra reservada fim.\n'.format(tokenAnterior[1], tokenAnterior[2], tokenAnterior[0]))
+      fila_lexico.insert(0, a)
+      a = ['fim', tokenAnterior[1], 0]
+    else:
+      copia = fila_lexico.copy()
+      quantAvancos = tratamentoErrosAvanco(auxDic, copia)
+      
+      if(quantAvancos < len(fila_lexico)):
+        print('Erro na linha {} coluna {}! Próximo ao token {}.\n'.format(a[1], a[2], a[0]))
+        fila_lexico = copia.copy()
+        a = fila_lexico.pop(0)
+      else:
+        #Rotina de tramento retorna
+        print('Erro na linha {} coluna {}, após o token {}.\n'.format(tokenAnterior[1], tokenAnterior[2], tokenAnterior[0]))
+        stop = tratamentoErrosRetorna(a, pilha)
