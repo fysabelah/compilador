@@ -169,34 +169,27 @@ def verificarTabelaSimbolos(lexema, token, tipo, linha, coluna):
   if(lexema not in tabela_simbolos.keys()):
     aux = {lexema: [token, tipo]}
     tabela_simbolos.update(aux)
-    #print('{} {} {}'.format(lexema, token, tipo))
     aux2 = [token, linha, coluna]
     fila_lexico.append(aux2)
   else:
     #Já está na tabela de símbolos. Pode ser palavra reservada ou id
     aux = tabela_simbolos[lexema]
-    #print("{} {} {}".format(lexema, aux[0], aux[1]))
     aux2 = [aux[0], linha, coluna]
     fila_lexico.append(aux2)
-
 
 def estadoAceito(lexema, estado, linhaerror, colunaerror):
   for chave in aceitacao_automato.keys():
     if(estado in aceitacao_automato[chave]):
       if(estado == 19):
-        #print('{} {} inteiro'.format(lexema, chave))
         aux = [chave, linhaerror, colunaerror]
         fila_lexico.append(aux)
       elif(estado == 21):
-        #print('{} {} real'.format(lexema, chave))
         aux = [chave, linhaerror, colunaerror]
         fila_lexico.append(aux)
       else:
         if(chave == 'id'):
           verificarTabelaSimbolos(lexema, chave, '-', linhaerror, colunaerror)
         else:
-          #print('{} {} {}'.format(lexema, chave, '-'))
-
           if(chave == "ab_p" or chave == "fc_p" or chave == "pt_v"):
             aux = [lexema, linhaerror, colunaerror]
             fila_lexico.append(aux)
@@ -206,8 +199,9 @@ def estadoAceito(lexema, estado, linhaerror, colunaerror):
       
       return
 
-  print('Erro na linha {} coluna {}. A estrutura identificada {} não pertence a linguagem.'.format(linhaerror, colunaerror, lexema))
-
+  fraseErro = 'Erro na linha ' + str(linhaerror) + ' coluna ' + str(colunaerror) + '. A estrutura identificada ' + lexema + ' não pertence a linguagem.\n'
+  aux = ['Erro', fraseErro]
+  fila_lexico.append(aux)
 
 def inAutomato(caracter, estado):
   auxDict = estados_automatos[estado]
@@ -217,7 +211,6 @@ def inAutomato(caracter, estado):
       return(auxDict[chave]) #Proximo estado
 
   return(-1) #Não presente no automato
-  
 
 def verificarContanteLiteral(palavra, interador, linhaerror):
   lex = ''
@@ -228,15 +221,16 @@ def verificarContanteLiteral(palavra, interador, linhaerror):
   
   if(interador < len(palavra)):
     #quer dizer que achou o fecha aspas
-    #print('{} literal -'.format(lex))
     aux = ['literal', linhaerror, interador]
     fila_lexico.append(aux)
     return(interador + 1)
   else:
-    #Saiu do while por erro, então printar o erro
-    print('Erro na linha {} coluna {}. Não foi identificador fechamento de ".'.format(linhaerror, interador))
+    #Saiu do while por erro
+    fraseErro = 'Erro na linha ' + str(linhaerror) + ' coluna ' + str(interador) + '. Não foi identificado fechamento de ".\n'
+    aux = ['Erro', fraseErro]
+    fila_lexico.append(aux) 
+    
     return(interador)
-
 
 def ignorarComentarios(palavra, interador, linhaerror):
   lex = ''
@@ -246,15 +240,16 @@ def ignorarComentarios(palavra, interador, linhaerror):
     interador += 1
   
   if(interador < len(palavra)):
-    #print('{} comentario -'.format(lex))
     aux = ['comentario', linhaerror, interador]
     fila_lexico.append(aux)
     return(interador + 1)
 
-  #Saiu do while por erro, então printar o erro
-  print('Erro na linha {} e coluna {}. Não foi identificador fechamento de }}.'.format(linhaerror, interador))
+  #Saiu do while por erro
+  fraseErro = 'Erro na linha ' + str(linhaerror) + ' coluna ' + str(interador) + '. Não foi identificado fechamento de }.\n'
+  aux = ['Erro', fraseErro]
+  fila_lexico.append(aux)
+  
   return(interador)
-
 
 def lexico():
   contLinha = 0 #Conta a linha que está para informar o erro
@@ -285,7 +280,9 @@ def lexico():
         flag = inAutomato(linha[i], estado)
 
         if(flag == -1 and estado == 0):
-          print('Erro na linha {} coluna {}. O {} não foi reconhecido pela linguagem.'.format(contLinha, i, linha[i]))
+          fraseErro = 'Erro na linha ' + str(contLinha) + ' coluna ' + str(i) + '. O ' + linha[i] + ' não foi reconhecido pela linguagem.\n'
+          aux = ['Erro', fraseErro]
+          fila_lexico.append(aux)
           i+=1
           flag = 0
         elif(estado == 0 and flag == 0): #Tira os espaços
@@ -310,8 +307,6 @@ def lexico():
     if(len(lexema)):
       estadoAceito(lexema, estado, contLinha, contColuna)
       
-  #Adicionar EOF do final do arquivo
-  #print('EOF')
   codigoFonte.close()
 
 def tratamentoErrosRetorna(a, pilha):
@@ -336,7 +331,6 @@ def tratamentoErrosRetorna(a, pilha):
     #Programa para e informa o erro e pronto, pois o estado que está é o erro e se tirá-lo sobre apenas o 0.
     return(0)
 
-
 def tratamentoErrosAvanco(dicionario, copia):
   cont = 0
 
@@ -348,6 +342,7 @@ def tratamentoErrosAvanco(dicionario, copia):
       copia.pop(0)
   
   return(cont)
+
 #--------------------------------------Main--------------------------------------#
 lexico()
 
@@ -391,32 +386,36 @@ while stop:
     elif lista[0] == 'ACC':
       stop = 0
   else:
-    #Rotina de tramento de erro de Inserção
-    if(s == 0 and a[0] != 'inicio'):
-      fila_lexico.insert(0, a)
-      print('Erro na linha 1 coluna 0, NÃO foi identificado a palavra reservada inicio.\n')
-      a = ['inicio', 1, 0]
-    elif(s == 2 and a[0] != 'varinicio'):
-      fila_lexico.insert(0, a)
-      print('Erro na linha 2 coluna 0, NÃO foi identificado a palavra reservada varinicio.\n')
-      a = ['varinicio', 1, 0]
-    elif(s == 58 and a[0] != 'varfim'):
-      fila_lexico.insert(0, a)
-      print('Erro na linha {} coluna {}, NÃO foi identificado a palavra reservada varfim.\n'.format(a[1], a[2]))
-      a = ['varfim', 1, 0]
-    elif(a[0] == '$'):
-      print('Erro na linha {} coluna {}, após o token {}. NÃO foi identificado a palavra reservada fim.\n'.format(tokenAnterior[1], tokenAnterior[2], tokenAnterior[0]))
-      fila_lexico.insert(0, a)
-      a = ['fim', tokenAnterior[1], 0]
+    if(a[0] == 'Erro'):
+      print(a[1])
+      a = fila_lexico.pop(0)
     else:
-      copia = fila_lexico.copy()
-      quantAvancos = tratamentoErrosAvanco(auxDic, copia)
-      
-      if(quantAvancos < len(fila_lexico)):
-        print('Erro na linha {} coluna {}! Próximo ao token {}.\n'.format(a[1], a[2], a[0]))
-        fila_lexico = copia.copy()
-        a = fila_lexico.pop(0)
+      #Rotina de tramento de erro de Inserção
+      if(s == 0 and a[0] != 'inicio'):
+        fila_lexico.insert(0, a)
+        print('Erro na linha 1 coluna 0, NÃO foi identificado a palavra reservada inicio.\n')
+        a = ['inicio', 1, 0]
+      elif(s == 2 and a[0] != 'varinicio'):
+        fila_lexico.insert(0, a)
+        print('Erro na linha 2 coluna 0, NÃO foi identificado a palavra reservada varinicio.\n')
+        a = ['varinicio', 1, 0]
+      elif(s == 58 and a[0] != 'varfim'):
+        fila_lexico.insert(0, a)
+        print('Erro na linha {} coluna {}, NÃO foi identificado a palavra reservada varfim.\n'.format(a[1], a[2]))
+        a = ['varfim', 1, 0]
+      elif(a[0] == '$'):
+        print('Erro na linha {} coluna {}, após o token {}. NÃO foi identificado a palavra reservada fim.\n'.format(tokenAnterior[1], tokenAnterior[2], tokenAnterior[0]))
+        fila_lexico.insert(0, a)
+        a = ['fim', tokenAnterior[1], 0]
       else:
-        #Rotina de tramento retorna
-        print('Erro na linha {} coluna {}, após o token {}.\n'.format(tokenAnterior[1], tokenAnterior[2], tokenAnterior[0]))
-        stop = tratamentoErrosRetorna(a, pilha)
+        copia = fila_lexico.copy()
+        quantAvancos = tratamentoErrosAvanco(auxDic, copia)
+        
+        if(quantAvancos < len(fila_lexico)):
+          print('Erro na linha {} coluna {}! Próximo ao token {}.\n'.format(a[1], a[2], a[0]))
+          fila_lexico = copia.copy()
+          a = fila_lexico.pop(0)
+        else:
+          #Rotina de tramento retorna
+          print('Erro na linha {} coluna {}, após o token {}.\n'.format(tokenAnterior[1], tokenAnterior[2], tokenAnterior[0]))
+          stop = tratamentoErrosRetorna(a, pilha)
