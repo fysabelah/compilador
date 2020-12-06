@@ -1,6 +1,3 @@
-from os import TMP_MAX
-
-
 estados_automatos = {
   0: {';': 1, '(': 2, ')': 3, '+': 4, '-': 5, '*': 6, '/': 7, '=': 8, '>': 9, '<': 11, "EOF": 15, "abcdefghijklmnopqrstuvwxyzABCDEFGIJKLMNOPQRSTUVWXYZ": 16, "0123456789": 19, '{': 25, '"': 27, ' ': 0},
   9:  {'=': 10},
@@ -364,18 +361,6 @@ def tratamentoErrosAvanco(dicionario, copia):
   
   return(cont)
 
-def printArquivo(arquivo):
-    print('---Arquivo---')
-    for i in arquivo:
-        print(i)
-    print()
-
-def printLista(lista):
-    print("----Pilha Semantico---")
-    for i in lista:
-        print(i)
-    print()
-
 def retornaTipo(lexema):
     atributos = tabela_simbolos[lexema]
     return(atributos[1])
@@ -417,12 +402,43 @@ def verificaTipo(op1, op2):
         else:
             return(id)
 
+def escritaArquivoC(listaArq, listaVar):
+    arquivo = open('traduzido.c', 'w')
+    arquivo.write('#include<stdio.h>\n\n')
+    arquivo.write('typedef enum { false, true } bool;\n')
+    arquivo.write('typedef char literal[256];\n\n')
+    arquivo.write('int main(){\n')
+
+    espacos = [['    ']]
+
+    #inserindo variaveis
+    for i in listaVar:
+        arquivo.write(''.join(espacos[0]))
+        linha = ''.join(i)
+        arquivo.write(linha + '\n')
+
+    #inserindo resto do arquivo
+    for i in range(0, len(listaArq)):
+        arquivo.write(''.join(espacos[len(espacos) - 1]))
+        arquivo.write(listaArq[i])
+        
+        if('\n' not in listaArq[i]):
+            arquivo.write('\n')
+        if('if(' in listaArq[i]):
+            novo = espacos[len(espacos) - 1] * 2
+            espacos.append(novo)
+        if((i+1) < len(listaArq) and '}' in listaArq[i+1] and len(espacos) > 1):
+            espacos.pop()
+        
+    arquivo.write('}')
+    arquivo.close()
+
 def regrasSemanticas(regra, semantico, arquivo, vartx):
     if(regra == 6):
         tipoF = ''
-        var = semantico.pop(len(semantico)-1)
+        var = semantico.pop()
         var = var[3]
-        tipo = semantico.pop(len(semantico)-1)
+        tipo = semantico.pop()
         
         #Atualizando tabela de símbolos
         if(tipo[0] == 'lit'):
@@ -442,8 +458,8 @@ def regrasSemanticas(regra, semantico, arquivo, vartx):
             arquivo.append('\n')
     elif(regra == 12):
         #A forma de escreve do literal e num é a mesma. Muda apenas o id
-        semantico.pop(len(semantico)-1)#escreva
-        aEscrever = semantico.pop(len(semantico)-1)
+        semantico.pop()#escreva
+        aEscrever = semantico.pop()
 
         if(aEscrever[0] == 'id'):
             tipo = retornaTipo(aEscrever[3])
@@ -460,8 +476,8 @@ def regrasSemanticas(regra, semantico, arquivo, vartx):
         else:
             arquivo.append('printf("' + aEscrever[3] + '");')
     elif(regra == 11):
-        semantico.pop(len(semantico)-1)#leia
-        var = semantico.pop(len(semantico)-1)
+        semantico.pop()#leia
+        var = semantico.pop()
         tipo = retornaTipo(var[len(var) - 1])
 
         if(tipo == '-'):
@@ -475,12 +491,12 @@ def regrasSemanticas(regra, semantico, arquivo, vartx):
                 arquivo.append('scanf("%lf", &' + var[len(var) - 1] + ');')
     elif(regra == 25):
         #Exclusivo para o se, por isso farei esse tipo de exclusão
-        semantico.pop(len(semantico) - 1)#se
-        semantico.pop(len(semantico) - 1)#(
-        op1 = semantico.pop(len(semantico) - 1) #id or num
-        op2 = semantico.pop(len(semantico) - 1) #simbolo
-        op3 = semantico.pop(len(semantico) - 1) #id or num
-        semantico.pop(len(semantico) - 1)#)
+        semantico.pop()#se
+        semantico.pop()#(
+        op1 = semantico.pop() #id or num
+        op2 = semantico.pop() #simbolo
+        op3 = semantico.pop() #id or num
+        semantico.pop()#)
         
         #Retornar se a operação pode ou não ser realizada
         flag = verificaTipo(op1, op3)
@@ -490,12 +506,12 @@ def regrasSemanticas(regra, semantico, arquivo, vartx):
             tipo = 'bool'
             criacaoTemporaria(tipo, arquivo, vartx, op1, op3, op2)
     elif(regra == 24):
-        semantico.pop(len(semantico) - 1) #retirar o então do se anterior
+        semantico.pop() #retirar o então do se anterior
         var = vartx[len(vartx) - 1] #vem sempre após o 24. Logo acabei de gerar a temporária
         se = 'if(' + var[2] + '){'
         arquivo.append(se)
     elif(regra == 23):
-        semantico.pop(len(semantico) - 1) #retirar o fimse
+        semantico.pop() #retirar o fimse
         arquivo.append('}')
     elif(regra == 18):
         #Aqui vou pegar o primeiro e não o último
@@ -523,9 +539,9 @@ def regrasSemanticas(regra, semantico, arquivo, vartx):
             semantico.insert(0, [var[0], op2[1], op2[2], var[2]]) #Inserção será utilizado na Regra 17
     elif(regra == 17):
         #Essa regra trata-se obrigatoriamente de um id na hora de verificar tipos
-        id = semantico.pop(len(semantico) - 1)
-        semantico.pop(len(semantico) - 1)
-        op = semantico.pop(len(semantico) - 1)
+        id = semantico.pop()
+        semantico.pop()
+        op = semantico.pop()
 
         tipo = retornaTipo(id[3])
         flag = 0
@@ -608,8 +624,7 @@ while stop:
             regrasSemanticas(regra, semantico, arquivoC, arquivoTx)
     elif lista[0] == 'ACC':
       stop = 0
-      printArquivo(arquivoC)
-      printLista(semantico)
+      escritaArquivoC(arquivoC, arquivoTx)
   else:
     #Rotina de tramento de erro de Inserção
     if(s == 0 and a[0] != 'inicio'):
