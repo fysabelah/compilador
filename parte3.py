@@ -371,36 +371,32 @@ def retornaTipoNum(constante):
     
     return('int')
 
+def tiposEquivalentes(tipo1, tipo2):
+    if(tipo1 == tipo2):
+        return(1)
+    return(0)
+
+def verificaEquivalencia(tipo1, tipo2):
+  if(tipo1 == '-' or tipo2 == '-'):
+    return('erro1')#Retorna erro não declarada
+  else:
+    flag = tiposEquivalentes(tipo1, tipo2)
+
+    if(flag):
+      return(tipo1)#Os tipos são equivalentes
+    else:
+      return('erro2')#Retorna erro tipos são diferentes
+
 def verificaTipo(op1, op2):
     if(op1[0] == 'num' and op2[0] == 'num'):
-        return(1)#Retorna constante númerica
+        return(verificaEquivalencia(retornaTipoNum(op1[3]), retornaTipoNum(op2[3])))
     elif(op1[0] == 'id' and op2[0] == 'id'):
-        tipo = retornaTipo(op1[len(op1) - 1])
-        tipo2 = retornaTipo(op1[len(op2) - 1])
-
-        if(tipo == '-' or tipo2 == '-'):
-            print('Erro: Variável não declarada')
-            return(0)#Retorna erro
-        elif(tipo == tipo2 and tipo != 'literal' and tipo2 != 'literal'):
-            return(2)#Retorna dois id
-        else:
-            return(0)
+        return(verificaEquivalencia(retornaTipo(op1[len(op1) - 1]), retornaTipo(op1[len(op2) - 1])))
     else:
-        id = 0
         if(op1[0] == 'id'):
-            tipo = retornaTipo(op1[len(op1) - 1])
-            id = -1#O id é o primeiro
+          return(verificaEquivalencia(retornaTipo(op1[len(op1) - 1]), retornaTipoNum(op2[3])))
         else:
-            tipo = retornaTipo(op2[len(op2) - 1])
-            id = -2#O id é o segundo
-
-        if(tipo == '-'):
-            print('Erro: Variável não declarada')
-            return(0)
-        elif(tipo == 'literal'):
-            return(0)
-        else:
-            return(id)
+          return(verificaEquivalencia(retornaTipo(op2[len(op2) - 1]), retornaTipoNum(op1[3])))
 
 def escritaArquivoC(listaArq, listaVar):
     arquivo = open('traduzido.c', 'w')
@@ -460,12 +456,12 @@ def regrasSemanticas(regra, semantico, arquivo, vartx):
         #A forma de escreve do literal e num é a mesma. Muda apenas o id
         semantico.pop()#escreva
         aEscrever = semantico.pop()
-
+        
         if(aEscrever[0] == 'id'):
             tipo = retornaTipo(aEscrever[3])
 
             if(tipo == '-'):
-                print('Erro: Variável não declarada')
+                print('Erro na linha {}: Variável não declarada'.format(aEscrever[1]))
             else:
                 if(tipo == 'int'):
                     arquivo.append('printf("%d", ' + aEscrever[3] + ');')    
@@ -479,9 +475,9 @@ def regrasSemanticas(regra, semantico, arquivo, vartx):
         semantico.pop()#leia
         var = semantico.pop()
         tipo = retornaTipo(var[len(var) - 1])
-
+        
         if(tipo == '-'):
-            print('Erro: Variável não declarada')
+            print('Erro na linha {}: Variável não declarada'.format(var[1]))
         else:
             if(tipo == 'literal'):
                 arquivo.append('scanf("%s", ' + var[len(var) - 1] + ');')
@@ -500,8 +496,10 @@ def regrasSemanticas(regra, semantico, arquivo, vartx):
         
         #Retornar se a operação pode ou não ser realizada
         flag = verificaTipo(op1, op3)
-        if(flag == 0):
-            print('Erro: Operando com tipos incompatíveis')
+        if(flag == 'erro1'):
+          print('Erro na linha {}: Variável não declarada'.format(op1[1]))
+        elif(flag == 'erro2'):
+            print('Erro na linha {}: Operando com tipos incompatíveis'.format(op1[1]))
         else:
             tipo = 'bool'
             criacaoTemporaria(tipo, arquivo, vartx, op1, op3, op2)
@@ -519,21 +517,12 @@ def regrasSemanticas(regra, semantico, arquivo, vartx):
         operacao = semantico.pop(0)#+
         op2 = semantico.pop(0)#B
         
-        flag = verificaTipo(op1, op2)
-        if(flag == 0):
-            print('Erro: Operando com tipos incompatíveis')
-        else:
-            if(flag == 1 and ('.' in op1[3] or '.' in op2[3])):
-                tipo = 'double'
-            elif(flag == 1 and ('.' not in op1[3] and '.' not in op2[3])):
-                tipo = 'int'
-            elif(flag == 2):
-                tipo = retornaTipo(op1[3])
-            elif(flag == -1):
-                tipo = retornaTipo(op1[3])
-            else:
-                tipo = retornaTipo(op2[3])
-            
+        tipo = verificaTipo(op1, op2)
+        if(tipo == 'erro1'):
+          print('Erro na linha {}: Variável não declarada'.format(op1[1]))
+        elif(tipo == 'erro2'):
+            print('Erro na linha {}: Operando com tipos incompatíveis'.format(op1[1]))
+        elif(tipo != 'literal'):
             criacaoTemporaria(tipo, arquivo, vartx, op2, op1, operacao)
             var = vartx[len(vartx) - 1]
             semantico.insert(0, [var[0], op2[1], op2[2], var[2]]) #Inserção será utilizado na Regra 17
@@ -542,11 +531,11 @@ def regrasSemanticas(regra, semantico, arquivo, vartx):
         id = semantico.pop()
         semantico.pop()
         op = semantico.pop()
-
+        
         tipo = retornaTipo(id[3])
         flag = 0
         if(tipo == '-'):
-            print('Erro. Variável não declarada')
+            print('Erro na linha {}: Variável não declarada'.format(id[1]))
         else:
             #Analisando os tipos
             if('T' in op[3]):
@@ -561,12 +550,7 @@ def regrasSemanticas(regra, semantico, arquivo, vartx):
             if(flag):
                 arquivo.append(id[3] + ' = ' + op[3] + ';')
             else:
-                print('Erro: Tipos diferentes para atribuição')
-
-def tiposEquivalentes(tipo1, tipo2):
-    if(tipo1 == tipo2):
-        return(1)
-    return(0)
+                print('Erro na linha {}: Tipos diferentes para atribuição'.format(id[1]))
 
 def criacaoTemporaria(tipo, arquivoC, arquivoV, op1, op2, op):
     tamanho = len(arquivoV)
