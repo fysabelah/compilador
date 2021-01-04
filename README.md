@@ -25,3 +25,6 @@ Este é uma atividade prática da disciplina de compiladores e foi dividido em t
 1. Desenvolver o autômato (DFA), com base na gramática (que no caso seria a coluna características da tabela de tokens).
 2. Criar uma tabela de transição com base nos estados do autômato. O autômato é quem vai definir o reconhecimento da linguagem, então implemente-o em uma estrutura que consiga manipular de forma fácil.
 3. Implemente os tópicos descrito em *Funcionamento: Parte 1* e terá a fase de análise léxica pronta.
+
+
+>>Já realizei algumas alterações localmente, porém preciso verificar umas questões antes de atualizar este repositório. Pretendo atualizá-las assim que possível, tanto as informações quanto um refatoramento do código. Pretendo também separar as funções e deixá-las mais abstratas.
