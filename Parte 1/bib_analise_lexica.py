@@ -1,12 +1,12 @@
-from estrutura_automato import Estrutura_Automato
+from estrutura_automato import EstruturaAutomato
 
 
-class Analise_Lexica:
+class AnaliseLexica:
 
-    def verifica_tabela_simbolos(lexema, token, tipo):
-        automato = Estrutura_Automato
+    def verifica_tabela_simbolos(self, lexema, token, tipo):
+        automato = EstruturaAutomato()
 
-        if (lexema not in automato.tabela_simbolos.keys()):
+        if lexema not in automato.tabela_simbolos.keys():
             aux = {lexema: [token, tipo]}
             automato.tabela_simbolos.update(aux)
             print('{} {} {}'.format(lexema, token, tipo))
@@ -15,18 +15,18 @@ class Analise_Lexica:
             aux = automato.tabela_simbolos[lexema]
             print("{} {} {}".format(lexema, aux[0], aux[1]))
 
-    def estado_aceito(lexema, estado, linha_error, coluna_error):
-        automato = Estrutura_Automato
+    def estado_aceito(self, lexema, estado, linha_error, coluna_error):
+        automato = EstruturaAutomato()
 
         for chave in automato.aceitacao_automato.keys():
-            if (estado in automato.aceitacao_automato[chave]):
-                if (estado == 19):
+            if estado in automato.aceitacao_automato[chave]:
+                if estado == 19:
                     print('{} {} inteiro'.format(lexema, chave))
-                elif (estado == 21):
+                elif estado == 21:
                     print('{} {} real'.format(lexema, chave))
                 else:
-                    if (chave == 'id'):
-                        Analise_Lexica.verifica_tabela_simbolos(lexema, chave, '-')
+                    if chave == 'id':
+                        self.verifica_tabela_simbolos(lexema, chave, '-')
                     else:
                         print('{} {} {}'.format(lexema, chave, '-'))
 
@@ -35,44 +35,43 @@ class Analise_Lexica:
         print('Erro na linha {} coluna {}. A estrutura identificada {} não pertence a linguagem.'.format(linha_error,
                                                                                                          coluna_error,
                                                                                                          lexema))
-
-    def presente_no_automato(caracter, estado):
-        automato = Estrutura_Automato
+    def presente_no_automato(self, caracter, estado):
+        automato = EstruturaAutomato()
 
         dicionario_auxiliar = automato.estados_automatos[estado]
 
         for chave in dicionario_auxiliar.keys():
             if caracter in chave:
-                return (dicionario_auxiliar[chave])  # Proximo estado
+                return dicionario_auxiliar[chave]  # Proximo estado
 
-        return (-1)  # Não presente no automato
+        return -1  # Não presente no automato
 
-    def verifica_contante_literal(palavra, interador, linha_error):
+    def verifica_contante_literal(self, palavra, interador, linha_error):
         lex = ''
 
-        while (interador < len(palavra) and palavra[interador] != '"'):
+        while interador < len(palavra) and palavra[interador] != '"':
             lex += palavra[interador]
             interador += 1
 
-        if (interador < len(palavra)):
+        if interador < len(palavra):
             print('{} literal -'.format(lex))  # encontrou o fechar de aspas
-            return (interador + 1)
+            return interador + 1
 
         # saiu do while por erro
         print('Erro na linha {} coluna {}. Não foi identificador fechamento de ".'.format(linha_error, interador))
-        return (interador)
+        return interador
 
-    def ignorar_comentarios(palavra, interador, linha_error):
+    def ignorar_comentarios(self, palavra, interador, linha_error):
         lex = ''
 
-        while (interador < len(palavra) and palavra[interador] != '}'):
+        while interador < len(palavra) and palavra[interador] != '}':
             lex += palavra[interador]
             interador += 1
 
-        if (interador < len(palavra)):
+        if interador < len(palavra):
             print('{} comentario -'.format(lex))
-            return (interador + 1)
+            return interador + 1
 
         # saiu do while por erro
         print('Erro na linha {} e coluna {}. Não foi identificador fechamento de }}.'.format(linha_error, interador))
-        return (interador)
+        return interador

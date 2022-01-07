@@ -6,6 +6,7 @@ class AnaliseLexica:
     def __init__(self):
         self.fila_lexico = []
         self.cont_linhas_arquivo = 0
+        self.lexico_tem_erro = False
 
     def verifica_tabela_simbolos(self, lexema, token, tipo):
         automato = EstruturaAutomato()
@@ -33,7 +34,7 @@ class AnaliseLexica:
                 else:
                     if chave == 'id':
                         self.fila_lexico.append([self.verifica_tabela_simbolos(lexema, chave, '-'), linha_error,
-                                    coluna_error])
+                                                 coluna_error])
                     else:
                         if chave == "ab_p" or chave == "fc_p" or chave == "pt_v":
                             aux = [lexema, linha_error, coluna_error]
@@ -46,8 +47,8 @@ class AnaliseLexica:
 
         frase_erro = 'Erro na linha ' + str(linha_error) + ' coluna ' + str(
             coluna_error) + '. A estrutura identificada ' + lexema + ' não pertence a linguagem.\n'
-        aux = ['Erro', frase_erro]
-        self.fila_lexico.append(aux)
+        self.lexico_tem_erro = True
+        print(frase_erro)
 
     def presente_no_automato(self, caracter, estado):
         automato = EstruturaAutomato()
@@ -72,14 +73,14 @@ class AnaliseLexica:
             aux = ['literal', linha_error, interador]
             self.fila_lexico.append(aux)
             return interador + 1
-        else:
-            # Saiu do while por erro
-            fraseErro = 'Erro na linha ' + str(linha_error) + ' coluna ' + str(
-                interador) + '. Não foi identificado fechamento de ".\n'
-            aux = ['Erro', fraseErro]
-            self.fila_lexico.append(aux)
 
-            return interador
+        # Saiu do while por erro
+        fraseErro = 'Erro na linha ' + str(linha_error) + ' coluna ' + str(
+            interador) + '. Não foi identificado fechamento de ".\n'
+        self.lexico_tem_erro = True
+        print(fraseErro)
+
+        return interador
 
     def ignorar_comentarios(self, palavra, interador, linha_error):
         lex = ''
@@ -97,8 +98,8 @@ class AnaliseLexica:
         # saiu do while por erro
         frase_erro = 'Erro na linha ' + str(linha_error) + ' coluna ' + str(
             interador) + '. Não foi identificado fechamento de }.\n'
-        aux = ['Erro', frase_erro]
-        self.fila_lexico.append(aux)
+        self.lexico_tem_erro = True
+        print(frase_erro)
 
         return interador
 
@@ -122,18 +123,22 @@ class AnaliseLexica:
 
                 if linha[indice_caracter_linha] == '"':
                     indice_caracter_linha += 1
-                    indice_caracter_linha = self.verifica_contante_literal(linha, indice_caracter_linha, self.cont_linhas_arquivo)
+                    indice_caracter_linha = self.verifica_contante_literal(linha, indice_caracter_linha,
+                                                                           self.cont_linhas_arquivo)
                 elif linha[indice_caracter_linha] == '{':
                     indice_caracter_linha += 1
-                    indice_caracter_linha = self.ignorar_comentarios(linha, indice_caracter_linha, self.cont_linhas_arquivo)
+                    indice_caracter_linha = self.ignorar_comentarios(linha, indice_caracter_linha,
+                                                                     self.cont_linhas_arquivo)
                 else:
                     flag = self.presente_no_automato(linha[indice_caracter_linha], estado)
 
                     if flag == -1 and estado == 0:
-                        frase_erro = 'Erro na linha ' + str(self.cont_linhas_arquivo) + ' coluna ' + str(indice_caracter_linha) + '. O ' + linha[
-                            indice_caracter_linha] + ' não foi reconhecido pela linguagem.\n'
-                        aux = ['Erro', frase_erro]
-                        self.fila_lexico.append(aux)
+                        frase_erro = 'Erro na linha ' + str(self.cont_linhas_arquivo) + ' coluna ' + str(
+                            indice_caracter_linha) + '. O ' + linha[
+                                         indice_caracter_linha] + ' não foi reconhecido pela linguagem.\n'
+                        self.lexico_tem_erro = True
+                        print(frase_erro)
+
                         indice_caracter_linha += 1
                         flag = 0
 
